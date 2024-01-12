@@ -68,4 +68,15 @@ public class DataRestTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.valueOf("application/hal+json")));
     }
+
+    @DisplayName("[api] 회원 관련 api 는 일체 제공하지 않는다.")
+    @Test
+    void given_whenRequestingUserAccounts_thenThrowsException() throws Exception {
+
+        mockMvc.perform(get("/api/userAccounts")).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/userAccounts")).andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/userAccounts")).andExpect(status().isNotFound());
+        mockMvc.perform(patch("/api/userAccounts")).andExpect(status().isNotFound());
+        mockMvc.perform(head("/api/userAccounts")).andExpect(status().isNotFound());
+    }
 }
