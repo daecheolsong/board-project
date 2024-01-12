@@ -46,7 +46,8 @@ public class Article extends AuditingFields{
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
     private final Set<ArticleComment> articleComments = new LinkedHashSet<>();
 
-
+    @ManyToOne(optional = false)
+    private UserAccount userAccount;
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
