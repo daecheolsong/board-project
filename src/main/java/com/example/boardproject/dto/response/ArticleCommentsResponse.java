@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * @author daecheol song
  * @since 1.0
  */
-public record ArticleCommentResponse(
+public record ArticleCommentsResponse(
         Long id,
         String content,
         LocalDateTime createdAt,
@@ -16,17 +16,17 @@ public record ArticleCommentResponse(
         String nickname
 ) {
 
-    public static ArticleCommentResponse of(Long id, String content, LocalDateTime createdAt, String email, String nickname) {
-        return new ArticleCommentResponse(id, content, createdAt, email, nickname);
+    public static ArticleCommentsResponse of(Long id, String content, LocalDateTime createdAt, String email, String nickname) {
+        return new ArticleCommentsResponse(id, content, createdAt, email, nickname);
     }
 
-    public static ArticleCommentResponse from(ArticleCommentDto dto) {
+    public static ArticleCommentsResponse from(ArticleCommentDto dto) {
         String nickname = dto.userAccountDto().nickname();
         if (nickname == null || nickname.isBlank()) {
             nickname = dto.userAccountDto().userId();
         }
 
-        return new ArticleCommentResponse(
+        return new ArticleCommentsResponse(
                 dto.id(),
                 dto.content(),
                 dto.createdAt(),
