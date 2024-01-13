@@ -75,7 +75,7 @@ class ArticleServiceTest {
     @Test
     void givenArticleId_whenDeletingArticle_thenDeletesArticle() {
 
-        willDoNothing().given(articleeRepository).delete(any(Article.class));
+        willDoNothing().given(articleRepository).delete(any(Article.class));
 
         sut.deleteArticle(1L);
 
