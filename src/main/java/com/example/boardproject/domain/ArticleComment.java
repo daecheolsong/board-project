@@ -16,7 +16,7 @@ import java.util.Objects;
  * @since 1.0
  */
 @Getter
-@ToString
+@ToString(callSuper = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(indexes = {
         @Index(columnList = "content"),
@@ -37,13 +37,14 @@ public class ArticleComment extends AuditingFields {
     @ManyToOne(optional = false)
     private UserAccount userAccount;
 
-    private ArticleComment(Article article, String content) {
+    private ArticleComment(Article article, UserAccount userAccount, String content) {
         this.article = article;
+        this.userAccount = userAccount;
         this.content = content;
     }
 
-    public static ArticleComment of(Article article, String content) {
-        return new ArticleComment(article, content);
+    public static ArticleComment of(Article article, UserAccount userAccount, String content) {
+        return new ArticleComment(article,userAccount, content);
     }
 
     @Override
