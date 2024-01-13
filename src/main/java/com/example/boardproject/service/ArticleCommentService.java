@@ -1,7 +1,6 @@
 package com.example.boardproject.service;
 
 import com.example.boardproject.dto.ArticleCommentDto;
-import com.example.boardproject.dto.ArticleCommentUpdateDto;
 import com.example.boardproject.repository.ArticleCommentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,7 @@ public class ArticleCommentService {
     private final ArticleCommentRepository articleCommentRepository;
 
     @Transactional(readOnly = true)
-    public List<ArticleCommentDto> searchArticleComment(Long articleId) {
+    public List<ArticleCommentDto> searchArticleComments(Long articleId) {
         return List.of();
     }
 
@@ -28,10 +27,10 @@ public class ArticleCommentService {
 
     }
 
-    public void updateArticleComment(Long articleCommentId, ArticleCommentUpdateDto articleCommentUpdateDto) {
+    public void updateArticleComment(ArticleCommentDto articleCommentUpdateDto) {
     }
 
-    public void deleteArticle(Long articleCommentId) {
+    public void deleteArticleComment(Long articleCommentId) {
 
     }
 }

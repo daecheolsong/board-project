@@ -1,22 +1,25 @@
 package com.example.boardproject.service;
 
 import com.example.boardproject.domain.Article;
+import com.example.boardproject.domain.UserAccount;
 import com.example.boardproject.domain.type.SearchType;
 import com.example.boardproject.dto.ArticleDto;
-import com.example.boardproject.dto.ArticleUpdateDto;
+import com.example.boardproject.dto.ArticleWithCommentsDto;
+import com.example.boardproject.dto.UserAccountDto;
 import com.example.boardproject.repository.ArticleRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 
+import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -31,55 +34,167 @@ class ArticleServiceTest {
     @Mock
     private ArticleRepository articleRepository;
 
-    @DisplayName("게시글을 검색하면, 게시글 리스트를 반환한다.")
+    @DisplayName("검색어 없이 게시글을 검색하면, 게시글 페이지를 반환한다.")
     @Test
-    void givenSearchParameters_whenSearchingArticles_thenReturnsArticleList() {
+    void givenNoSearchParameters_whenSearchingArticles_thenReturnsArticlePage() {
 
-        Page<ArticleDto> articles = sut.searchArticles(SearchType.TITLE, "search keyword");
+        Pageable pageable = Pageable.ofSize(20);
+        given(articleRepository.findAll(pageable)).willReturn(Page.empty());
 
-        assertThat(articles).isNotNull();
+        Page<ArticleDto> articles = sut.searchArticles(null, null, pageable);
+
+        assertThat(articles).isEmpty();
+        then(articleRepository).should().findAll(pageable);
+    }
+
+    @DisplayName("검색어와 함께 게시글을 검색하면, 게시글 페이지를 반환한다.")
+    @Test
+    void givenSearchParameters_whenSearchingArticles_thenReturnsArticlePage() {
+
+        SearchType searchType = SearchType.TITLE;
+        String searchKeyword = "title";
+        Pageable pageable = Pageable.ofSize(20);
+        given(articleRepository.findByTitle(searchKeyword, pageable)).willReturn(Page.empty());
+
+        Page<ArticleDto> articles = sut.searchArticles(searchType, searchKeyword, pageable);
+
+        assertThat(articles).isEmpty();
+        then(articleRepository).should().findByTitle(searchKeyword, pageable);
     }
 
     @DisplayName("게시글을 조회하면, 게시글을 반환한다.")
     @Test
     void givenArticleId_whenSearchingArticle_thenReturnsArticle() {
 
-        ArticleDto article = sut.searchArticle(1L);
+        Long articleId = 1L;
+        Article article = createArticle();
+        given(articleRepository.findById(articleId)).willReturn(Optional.of(article));
 
-        assertThat(article).isNotNull();
+        ArticleWithCommentsDto dto = sut.getArticle(articleId);
+
+        assertThat(dto)
+                .hasFieldOrPropertyWithValue("title", article.getTitle())
+                .hasFieldOrPropertyWithValue("content", article.getContent())
+                .hasFieldOrPropertyWithValue("hashtag", article.getHashtag());
+        then(articleRepository).should().findById(articleId);
     }
 
-    @DisplayName("게시글을 정보를 입력하면, 게시글을 생성한다.")
+    @DisplayName("없는 게시글을 조회하면, 예외를 던진다.")
+    @Test
+    void givenNonexistentArticleId_whenSearchingArticle_thenThrowsException() {
+
+        Long articleId = 0L;
+        given(articleRepository.findById(articleId)).willReturn(Optional.empty());
+
+        Throwable t = catchThrowable(() -> sut.getArticle(articleId));
+
+        assertThat(t)
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("게시글이 없습니다 - articleId: " + articleId);
+        then(articleRepository).should().findById(articleId);
+    }
+
+    @DisplayName("게시글 정보를 입력하면, 게시글을 생성한다.")
     @Test
     void givenArticleInfo_whenSavingArticle_thenSavesArticle() {
 
-        given(articleRepository.save(any(Article.class))).willReturn(null);
+        ArticleDto dto = createArticleDto();
+        given(articleRepository.save(any(Article.class))).willReturn(createArticle());
 
-        sut.saveArticle(ArticleDto.of(LocalDateTime.now(), "song", "title1", "content", "#hashtag"));
+        sut.saveArticle(dto);
 
         then(articleRepository).should().save(any(Article.class));
     }
 
-    @DisplayName("게시글 ID 와 수정 정보를 입력하면, 게시글을 수정한다.")
+    @DisplayName("게시글의 수정 정보를 입력하면, 게시글을 수정한다.")
     @Test
-    void givenArticleIdAndModifiedInfo_whenUpdatingArticle_thenUpdatesArticle() {
+    void givenModifiedArticleInfo_whenUpdatingArticle_thenUpdatesArticle() {
 
-        given(articleRepository.save(any(Article.class))).willReturn(null);
+        Article article = createArticle();
+        ArticleDto dto = createArticleDto("새 타이틀", "새 내용", "#springboot");
+        given(articleRepository.getReferenceById(dto.id())).willReturn(article);
 
-        sut.updateArticle(1L, ArticleUpdateDto.of("updateTitle", "updateContent", "#updateHashtag"));
+        sut.updateArticle(dto);
 
-        then(articleRepository).should().save(any(Article.class));
+        assertThat(article)
+                .hasFieldOrPropertyWithValue("title", dto.title())
+                .hasFieldOrPropertyWithValue("content", dto.content())
+                .hasFieldOrPropertyWithValue("hashtag", dto.hashtag());
+        then(articleRepository).should().getReferenceById(dto.id());
     }
 
-    @DisplayName("게시글 ID 를 입력하면, 게시글을 삭제한다.")
+    @DisplayName("없는 게시글의 수정 정보를 입력하면, 경고 로그를 찍고 아무 것도 하지 않는다.")
+    @Test
+    void givenNonexistentArticleInfo_whenUpdatingArticle_thenLogsWarningAndDoesNothing() {
+
+        ArticleDto dto = createArticleDto("새 타이틀", "새 내용", "#springboot");
+        given(articleRepository.getReferenceById(dto.id())).willThrow(EntityNotFoundException.class);
+
+        sut.updateArticle(dto);
+
+        then(articleRepository).should().getReferenceById(dto.id());
+    }
+
+    @DisplayName("게시글의 ID를 입력하면, 게시글을 삭제한다")
     @Test
     void givenArticleId_whenDeletingArticle_thenDeletesArticle() {
 
-        willDoNothing().given(articleRepository).delete(any(Article.class));
+        Long articleId = 1L;
+        willDoNothing().given(articleRepository).deleteById(articleId);
 
         sut.deleteArticle(1L);
 
-        then(articleRepository).should().delete(any(Article.class));
+        then(articleRepository).should().deleteById(articleId);
+    }
+
+    private UserAccount createUserAccount() {
+        return UserAccount.of(
+                "song",
+                "password",
+                "uno@email.com",
+                "ssong",
+                null
+        );
+    }
+
+    private Article createArticle() {
+        return Article.of(
+                createUserAccount(),
+                "title",
+                "content",
+                "#java"
+        );
+    }
+
+    private ArticleDto createArticleDto() {
+        return createArticleDto("title", "content", "#java");
+    }
+
+    private ArticleDto createArticleDto(String title, String content, String hashtag) {
+        return ArticleDto.of(1L,
+                createUserAccountDto(),
+                title,
+                content,
+                hashtag,
+                LocalDateTime.now(),
+                "ssong",
+                LocalDateTime.now(),
+                "ssong");
+    }
+
+    private UserAccountDto createUserAccountDto() {
+        return UserAccountDto.of(
+                1L,
+                "song",
+                "password",
+                "song@mail.com",
+                "ssong",
+                "This is memo",
+                LocalDateTime.now(),
+                "ssong",
+                LocalDateTime.now(),
+                "ssong"
+        );
     }
 
 }
