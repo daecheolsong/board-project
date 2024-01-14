@@ -1,9 +1,12 @@
 package com.example.boardproject.service;
 
+import com.example.boardproject.domain.Article;
 import com.example.boardproject.domain.ArticleComment;
+import com.example.boardproject.domain.UserAccount;
 import com.example.boardproject.dto.ArticleCommentDto;
 import com.example.boardproject.repository.ArticleCommentRepository;
 import com.example.boardproject.repository.ArticleRepository;
+import com.example.boardproject.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class ArticleCommentService {
     private final ArticleCommentRepository articleCommentRepository;
     private final ArticleRepository articleRepository;
+    private final UserAccountRepository userAccountRepository;
 
     @Transactional(readOnly = true)
     public List<ArticleCommentDto> searchArticleComments(Long articleId) {
@@ -35,7 +39,10 @@ public class ArticleCommentService {
 
     public void saveArticleComment(ArticleCommentDto articleCommentDto) {
         try {
-            articleCommentRepository.save(articleCommentDto.toEntity(articleRepository.getReferenceById(articleCommentDto.articleId())));
+            Article article = articleRepository.getReferenceById(articleCommentDto.articleId());
+            UserAccount userAccount = userAccountRepository.findByUserId(articleCommentDto.userAccountDto().userId())
+                    .orElseThrow(EntityNotFoundException::new);
+            articleCommentRepository.save(articleCommentDto.toEntity(article, userAccount));
         } catch (EntityNotFoundException e) {
             log.warn("댓글 저장 실패. 댓글의 게시글을 찾을 수 없습니다 - dto: {}", articleCommentDto);
         }
@@ -50,7 +57,7 @@ public class ArticleCommentService {
         }
     }
 
-    public void deleteArticleComment(Long articleCommentId) {
-        articleCommentRepository.deleteById(articleCommentId);
+    public void deleteArticleComment(Long articleCommentId, String userId) {
+        articleCommentRepository.deleteByIdAndUserAccount_UserId(articleCommentId, userId);
     }
 }
