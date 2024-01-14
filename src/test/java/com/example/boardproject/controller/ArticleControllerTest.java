@@ -286,13 +286,14 @@ class ArticleControllerTest {
     }
 
 
-    @WithMockUser
+    @WithUserDetails(value = "tester1", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("[view][POST] 게시글 삭제 - 정상 호출")
     @Test
     void givenArticleIdToDelete_whenRequesting_thenDeletesArticle() throws Exception {
 
         long articleId = 1L;
-        willDoNothing().given(articleService).deleteArticle(articleId);
+        String userId = "tester1";
+        willDoNothing().given(articleService).deleteArticle(articleId, userId);
 
         mockMvc.perform(
                         post("/articles/" + articleId + "/delete")
@@ -302,7 +303,7 @@ class ArticleControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(view().name("redirect:/articles"))
                 .andExpect(redirectedUrl("/articles"));
-        then(articleService).should().deleteArticle(articleId);
+        then(articleService).should().deleteArticle(articleId, userId);
     }
 
     private ArticleWithCommentsDto createArticleWithCommentsDto() {

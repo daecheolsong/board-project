@@ -59,7 +59,7 @@ public class UserAccount extends AuditingFields {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof UserAccount that)) return false;
-        return id != null && id.equals(that.id);
+        return userId != null && userId.equals(that.userId);
     }
 
     @Override
