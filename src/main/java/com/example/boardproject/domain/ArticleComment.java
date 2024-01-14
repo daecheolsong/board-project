@@ -32,6 +32,7 @@ public class ArticleComment extends AuditingFields {
     @ManyToOne(optional = false)
     private Article article;
     @Column(nullable = false, length = 500)
+    @Setter
     private String content;
 
     @ManyToOne(optional = false)
