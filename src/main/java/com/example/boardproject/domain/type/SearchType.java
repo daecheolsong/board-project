@@ -12,8 +12,7 @@ public enum SearchType {
     CONTENT("본문"),
     ID("유저 ID"),
     NICKNAME("닉네임"),
-    HASHTAG("해시태그"),
-    NONE("선택 안함");
+    HASHTAG("해시태그");
 
     @Getter private final String description;
 
@@ -21,9 +20,4 @@ public enum SearchType {
         this.description = description;
     }
 
-    public static SearchType of(String value) {
-        for(SearchType v : values())
-            if(v.getDescription().equalsIgnoreCase(value)) return v;
-        return SearchType.NONE;
-    }
 }

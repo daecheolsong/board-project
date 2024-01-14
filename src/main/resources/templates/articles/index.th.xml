@@ -4,12 +4,12 @@
     <attr sel="#footer" th:replace="footer :: footer"/>
 
     <attr sel="main" th:object="${articles}">
-        <attr sel="#search-type" th:remove="all-but-first">
+        <attr sel="#search_type" th:remove="all-but-first">
             <attr sel="option[0]"
                   th:each="searchType : ${searchTypes}"
                   th:value="${searchType.name}"
                   th:text="${searchType.description}"
-                  th:selected="${param.searchType != null && (param.searchType.toString == searchType.name)}"
+                  th:selected="${param.searchType != null && (param.searchType.toString() eq searchType.description)}"
             />
         </attr>
         <attr sel="#search-value" th:value="${param.searchValue}" />
