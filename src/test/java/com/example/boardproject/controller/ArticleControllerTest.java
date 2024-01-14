@@ -86,7 +86,9 @@ class ArticleControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(view().name("articles/index"))
                 .andExpect(model().attributeExists("articles"))
-                .andExpect(model().attribute("paginationBarNumbers", barNumbers));
+                .andExpect(model().attribute("paginationBarNumbers", barNumbers))
+                .andExpect(model().attributeExists("searchTypes"));
+
         then(articleService).should().searchArticles(null, null, pageable);
         then(paginationService).should().getPaginationBarNumbers(pageable.getPageNumber(), Page.empty().getTotalPages());
     }
@@ -103,8 +105,7 @@ class ArticleControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
                 .andExpect(view().name("articles/detail"))
                 .andExpect(model().attributeExists("article"))
-                .andExpect(model().attributeExists("articleComments"))
-                .andExpect(model().attributeExists("searchTypes"));
+                .andExpect(model().attributeExists("articleComments"));
 
         then(articleService).should().getArticle(articleId);
 
