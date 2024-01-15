@@ -7,6 +7,7 @@ import com.example.boardproject.dto.ArticleCommentDto;
 import com.example.boardproject.dto.UserAccountDto;
 import com.example.boardproject.repository.ArticleCommentRepository;
 import com.example.boardproject.repository.ArticleRepository;
+import com.example.boardproject.repository.UserAccountRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +32,8 @@ class ArticleCommentServiceTest {
     private ArticleCommentRepository articleCommentRepository;
     @Mock
     private ArticleRepository articleRepository;
+    @Mock
+    private UserAccountRepository userAccountRepository;
 
     @InjectMocks
     private ArticleCommentService sut;
@@ -55,13 +59,16 @@ class ArticleCommentServiceTest {
     void givenArticleCommentInfo_whenSavingArticleComment_thenSavesArticleComment() {
 
         ArticleCommentDto dto = createArticleCommentDto("댓글");
+        String userId = "song";
         given(articleRepository.getReferenceById(dto.articleId())).willReturn(createArticle());
         given(articleCommentRepository.save(any(ArticleComment.class))).willReturn(null);
+        given(userAccountRepository.findByUserId(userId)).willReturn(Optional.of(createUserAccount()));
 
         sut.saveArticleComment(dto);
 
         then(articleRepository).should().getReferenceById(dto.articleId());
         then(articleCommentRepository).should().save(any(ArticleComment.class));
+        then(userAccountRepository).should().findByUserId(userId);
     }
 
     @DisplayName("댓글 저장을 시도했는데 맞는 게시글이 없으면, 경고 로그를 찍고 아무것도 안 한다.")
