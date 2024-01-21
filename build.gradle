@@ -63,6 +63,15 @@ sourceSets {
 	main.java.srcDirs += [generated]
 }
 
+test {
+	afterTest {desc, result ->
+		println "Test ${desc.name} ${result.resultType}"
+	}
+	doLast {
+		println "--------------- TEST FINISHED ---------------"
+	}
+}
+
 clean {
 	delete file(generated)
 }
