@@ -7,9 +7,10 @@
 간단한 게시판 서비스
 
 
-
-
-
+## Docker
+```bash
+$ docker compose -f ./docker-compose.yml up
+```
 
 
 ## 프로젝트 관리
