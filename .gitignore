@@ -238,3 +238,6 @@ modules.xml
 # Created by https://www.toptal.com/developers/gitignore/api/intellij+iml
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij+iml
 
+# docker-compose 관련 파일
+/mysql-data
+.env
