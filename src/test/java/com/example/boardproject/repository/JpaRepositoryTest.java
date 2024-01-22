@@ -1,6 +1,5 @@
 package com.example.boardproject.repository;
 
-import com.example.boardproject.config.JpaConfig;
 import com.example.boardproject.domain.Article;
 import com.example.boardproject.domain.UserAccount;
 import org.junit.jupiter.api.DisplayName;
