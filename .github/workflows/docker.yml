@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 env:
-  VERSION : ${{ contains(github.ref,'refs/tags') && ${{ github.ref_name }} || ${{ github.sha}} }}
+  VERSION : ${{ github.ref_type=='tag' && ${{ github.ref_name }} || ${{ github.sha}} }}
 jobs:
   build:
 
