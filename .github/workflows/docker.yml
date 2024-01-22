@@ -3,12 +3,15 @@ name : CI/CD with Docker
 on:
   push:
     branches: ['main', '/feature/**']
+    tags:
+      - '*'
   pull_request:
     branches: ['main']
 
 permissions:
   contents: read
-
+env:
+  VERSION : ${{ contains(github.ref,'refs/tags') && ${{ github.ref_name }} || ${{ github.sha}} }}
 jobs:
   build:
 
@@ -55,5 +58,5 @@ jobs:
       - name: Docker Build
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-          docker build -f Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/board .
-          docker push ${{ secrets.DOCKER_USERNAME }}/board
+          docker build -f Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/board:$VERSION .
+          docker push ${{ secrets.DOCKER_USERNAME }}/board:$VERSION
