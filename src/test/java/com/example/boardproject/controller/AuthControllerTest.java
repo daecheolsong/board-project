@@ -1,6 +1,5 @@
 package com.example.boardproject.controller;
 
-import com.example.boardproject.config.SecurityConfig;
 import com.example.boardproject.config.TestSecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
