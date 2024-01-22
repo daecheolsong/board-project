@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 env:
-  VERSION : ${{ contains(github.ref,'refs/tags') && ${{ github.ref_name }} || ${{ github.sha}} }}
+  VERSION : ${{ github.ref_type=='tag' && github.ref_name || github.sha }}
 jobs:
   build:
 
@@ -25,6 +25,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          
+      - name: Setup MySQL
+        uses: samin/mysql-action@v1
+        with:
+          character set server: 'utf8' 
+          mysql database: board
+          mysql user: ${{ secrets.MYSQL_USERNAME }}
+          mysql password: ${{ secrets.MYSQL_PASSWORD }}
 
       - name: Run chmod to make gradlew executable
         run: chmod +x ./gradlew
@@ -34,8 +42,6 @@ jobs:
         with:
           arguments: build
 
-
-
       - name: Gradle Caching
         uses: actions/cache@v3
         with:
@@ -44,7 +50,6 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle', '**/gradle-wrapper.properties') }} # first search
           restore-keys: ${{ runner.os }}-gradle- # no hit, search
-
 
       - name: Run chmod to make gradlew executable
         run: chmod +x ./gradlew
@@ -56,6 +61,7 @@ jobs:
 
 
       - name: Docker Build
+        if: github.ref == 'refs/heads/master'
         run: |
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           docker build -f Dockerfile -t ${{ secrets.DOCKER_USERNAME }}/board:$VERSION .
