@@ -52,6 +52,10 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+jar {
+	enabled = false
+}
+
 def generated = 'src/main/generated'
 
 // querydsl QClass 파일 생성 위치 설정
