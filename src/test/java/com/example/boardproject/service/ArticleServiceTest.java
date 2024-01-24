@@ -12,7 +12,6 @@ import com.example.boardproject.repository.ArticleRepository;
 import com.example.boardproject.repository.HashtagRepository;
 import com.example.boardproject.repository.UserAccountRepository;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -208,12 +207,10 @@ class ArticleServiceTest {
         then(articleRepository).should().save(any(Article.class));
     }
 
-    @Disabled("구현 중....")
     @DisplayName("게시글의 수정 정보를 입력하면, 게시글을 수정한다.")
     @Test
     void givenModifiedArticleInfo_whenUpdatingArticle_thenUpdatesArticle() {
 
-        // Given
         Article article = createArticle();
         ArticleDto dto = createArticleDto("새 타이틀", "새 내용 #springboot");
         Set<String> expectedHashtagNames = Set.of("springboot");
@@ -276,13 +273,14 @@ class ArticleServiceTest {
         then(userAccountRepository).should().findByUserId(dto.userAccountDto().userId());
         then(hashtagService).shouldHaveNoInteractions();
     }
-    @Disabled("구현중 ...")
     @DisplayName("게시글의 ID를 입력하면, 게시글을 삭제한다")
     @Test
     void givenArticleId_whenDeletingArticle_thenDeletesArticle() {
 
         Long articleId = 1L;
         String userId = "song";
+
+        given(articleRepository.getReferenceById(articleId)).willReturn(createArticle());
         willDoNothing().given(articleRepository).deleteByIdAndUserAccount_UserId(articleId, userId);
         willDoNothing().given(articleRepository).flush();
         willDoNothing().given(hashtagService).deleteHashtagWithoutArticles(any());
