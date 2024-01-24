@@ -1,6 +1,7 @@
 package com.example.boardproject.repository;
 
 import com.example.boardproject.domain.Article;
+import com.example.boardproject.domain.Hashtag;
 import com.example.boardproject.domain.UserAccount;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -54,8 +56,10 @@ class JpaRepositoryTest {
 
         long previousCount = articleRepository.count();
         UserAccount userAccount = userAccountRepository.save(UserAccount.of("tester", "1234", null, null, null));
-        articleRepository.save(Article.of(userAccount, "new article", "new content", "#foo"));
+        Article article = Article.of(userAccount, "new Article", "new content");
+        article.addHashtags(Set.of(Hashtag.of("spring")));
 
+        articleRepository.save(article);
 
         assertThat(articleRepository.count())
                 .isEqualTo(previousCount + 1);
@@ -65,12 +69,16 @@ class JpaRepositoryTest {
     @DisplayName("update 테스트")
     void givenTestData_whenUpdating_thenWorksFine() {
         Article article = articleRepository.findById(1L).orElseThrow();
-        String updatedHashTag = "#springboot";
-        article.setHashtag(updatedHashTag);
+        Hashtag updatedHashtag = Hashtag.of("springboot");
+        article.clearHashtags();
+        article.addHashtags(Set.of(updatedHashtag));
 
         Article savedArticle = articleRepository.saveAndFlush(article);
 
-        assertThat(savedArticle).hasFieldOrPropertyWithValue("hashtag", updatedHashTag);
+        assertThat(savedArticle.getHashtags())
+                .hasSize(1)
+                .extracting("hashtagName", String.class)
+                .containsExactly(updatedHashtag.getHashtagName());
     }
 
     @Test

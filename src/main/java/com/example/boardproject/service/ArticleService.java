@@ -6,6 +6,7 @@ import com.example.boardproject.domain.type.SearchType;
 import com.example.boardproject.dto.ArticleDto;
 import com.example.boardproject.dto.ArticleWithCommentsDto;
 import com.example.boardproject.repository.ArticleRepository;
+import com.example.boardproject.repository.HashtagRepository;
 import com.example.boardproject.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityNotFoundException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -29,6 +31,7 @@ public class ArticleService {
 
     private final ArticleRepository articleRepository;
     private final UserAccountRepository userAccountRepository;
+    private final HashtagRepository hashtagRepository;
 
     @Transactional(readOnly = true)
     public Page<ArticleDto> searchArticles(SearchType searchType, String keyword, Pageable pageable) {
@@ -37,12 +40,16 @@ public class ArticleService {
                     .map(ArticleDto::from);
         }
 
+        // TODO : searchType == null && searchValue!= null 일때 처리 필요.
         return switch (searchType) {
             case TITLE -> articleRepository.findByTitleContaining(keyword, pageable).map(ArticleDto::from);
             case CONTENT -> articleRepository.findByContentContaining(keyword, pageable).map(ArticleDto::from);
             case ID -> articleRepository.findByUserAccount_UserIdContaining(keyword, pageable).map(ArticleDto::from);
             case NICKNAME -> articleRepository.findByUserAccount_NicknameContaining(keyword, pageable).map(ArticleDto::from);
-            case HASHTAG -> articleRepository.findByHashtag("#" + keyword, pageable).map(ArticleDto::from);
+            case HASHTAG -> articleRepository.findByHashtagNames(
+                    Arrays.stream(keyword.split(" ")).toList(),
+                    pageable
+            ).map(ArticleDto::from);
         };
     }
 
@@ -79,7 +86,6 @@ public class ArticleService {
                 if (articleDto.content() != null) {
                     article.setContent(articleDto.content());
                 }
-                article.setHashtag(articleDto.hashtag());
             }
         } catch (EntityNotFoundException e) {
             log.warn("게시글 업데이트 실패. 게시글을 수정하는데 필요한 정보를 찾을 수 없습니다 -  {}", e.getLocalizedMessage());
@@ -101,10 +107,10 @@ public class ArticleService {
             return Page.empty(pageable);
         }
 
-        return articleRepository.findByHashtag(hashtag, pageable).map(ArticleDto::from);
+        return articleRepository.findByHashtagNames(List.of(hashtag), pageable).map(ArticleDto::from);
     }
 
     public List<String> getHashtags() {
-        return articleRepository.findAllDistinctHashtags();
+        return hashtagRepository.findAllHashtagNames();
     }
 }
