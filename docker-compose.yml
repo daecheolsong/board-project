@@ -1,21 +1,32 @@
 version: '3'
 services:
-  mysql-db:
-    container_name: mysql-db
-    image: mysql:8.0.29
+#  mysql-db:
+#    container_name: mysql-db
+#    image: mysql:8.0.29
+#    environment:
+#      MYSQL_DATABASE: ${DB_DATABASE}
+#      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+#      MYSQL_ROOT_HOST: ${DB_ROOT_HOST}
+#      MYSQL_USER: ${DB_USER}
+#      MYSQL_PASSWORD: ${DB_PASSWORD}
+#      TZ: Asia/Seoul
+#
+#    command:
+#      - "--character-set-server=utf8mb4"
+#      - "--collation-server=utf8mb4_unicode_ci"
+#    volumes:
+#      - ./mysql-data:/var/lib/mysql
+  postgres-db:
+    container_name: postgres-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      TZ: Asia/Seoul
-
-    command:
-      - "--character-set-server=utf8mb4"
-      - "--collation-server=utf8mb4_unicode_ci"
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB : ${DB_NAME}
     volumes:
-      - ./mysql-data:/var/lib/mysql
+      - ./postgres-data/:/var/lib/postgresql/data
 
 
   webapp:
@@ -27,11 +38,11 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - mysql-db
+      - postgres-db
     environment:
       SPRING_DATASOURCE_URL: ${DB_URL}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: ${DB_DRIVER}
 
 

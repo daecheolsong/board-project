@@ -14,9 +14,9 @@ logging:
 
 spring:
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/board
-    username: song
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/board
+    username: postgres
     password: 1234
 
   jpa:
