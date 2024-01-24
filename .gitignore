@@ -241,3 +241,4 @@ modules.xml
 # docker-compose 관련 파일
 /mysql-data
 .env
+/postgres-data
