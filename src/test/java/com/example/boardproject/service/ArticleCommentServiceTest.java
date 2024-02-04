@@ -82,6 +82,24 @@ class ArticleCommentServiceTest {
         then(articleCommentRepository).should().save(any(ArticleComment.class));
         then(userAccountRepository).should().findByUserId(dto.userAccountDto().userId());
     }
+    @DisplayName("부모 댓글 ID 와 댓글 정보를 입력하면, 대댓글을 저장한다.")
+    @Test
+    void givenParentCommentIdAndCommentInfo_whenSaving_thenSaveChildComment() {
+
+        Long parentCommentId = 1L;
+        ArticleComment parent = createArticleComment(parentCommentId, "댓글");
+        ArticleCommentDto child = createArticleCommentDto(parentCommentId, "대댓글");
+        given(articleRepository.getReferenceById(child.articleId())).willReturn(createArticle());
+        given(userAccountRepository.findByUserId(child.userAccountDto().userId())).willReturn(Optional.of(createUserAccount()));
+        given(articleCommentRepository.getReferenceById(child.parentCommentId())).willReturn(parent);
+
+        sut.saveArticleComment(child);
+
+        assertThat(child.parentCommentId()).isNotNull();
+        then(articleRepository).should().getReferenceById(child.articleId());
+        then(userAccountRepository).should().findByUserId(child.userAccountDto().userId());
+        then(articleCommentRepository).should(never()).save(any(ArticleComment.class));
+    }
 
     @DisplayName("댓글 저장을 시도했는데 맞는 게시글이 없으면, 경고 로그를 찍고 아무것도 안 한다.")
     @Test
