@@ -1,11 +1,12 @@
 package com.example.boardproject.dto.response;
 
+import com.example.boardproject.dto.ArticleCommentDto;
 import com.example.boardproject.dto.ArticleWithCommentsDto;
 import com.example.boardproject.dto.HashtagDto;
 
 import java.time.LocalDateTime;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -44,11 +45,33 @@ public record ArticleWithCommentsResponse(
                 dto.createdAt(),
                 dto.userAccountDto().email(),
                 nickname,
-                dto.articleCommentDtos().stream()
-                        .map(ArticleCommentsResponse::from)
-                        .collect(Collectors.toCollection(LinkedHashSet::new)),
+                organizeChildComments(dto.articleCommentDtos()),
                 dto.userAccountDto().userId()
         );
     }
 
+    private static Set<ArticleCommentsResponse> organizeChildComments(Set<ArticleCommentDto> dtos) {
+        Map<Long, ArticleCommentsResponse> map = dtos.stream()
+                .map(ArticleCommentsResponse::from)
+                .collect(Collectors.toMap(ArticleCommentsResponse::id, Function.identity()));
+
+        map.values().stream()
+                .filter(ArticleCommentsResponse::hasParentComment)
+                .forEach(comment -> {
+                    ArticleCommentsResponse parentComment = map.get(comment.parentCommentId());
+                    parentComment.childComments().add(comment);
+                });
+
+        return map.values().stream()
+                .filter(comment -> !comment.hasParentComment())
+                .collect(Collectors.toCollection(() ->
+                        new TreeSet<>(Comparator
+                                .comparing(ArticleCommentsResponse::createdAt)
+                                .reversed()
+                                .thenComparingLong(ArticleCommentsResponse::id)
+                        )
+                ));
+    }
+
 }
+

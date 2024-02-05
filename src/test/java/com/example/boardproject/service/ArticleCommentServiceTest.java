@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
@@ -45,14 +46,23 @@ class ArticleCommentServiceTest {
     void givenArticleId_whenSearchingArticleComments_thenReturnsArticleComments() {
 
         Long articleId = 1L;
-        ArticleComment expected = createArticleComment("content");
-        given(articleCommentRepository.findByArticle_Id(articleId)).willReturn(List.of(expected));
+        ArticleComment expectedParentComment = createArticleComment(1L, "parent content");
+        ArticleComment expectedChildComment = createArticleComment(2L, "child content");
+        expectedChildComment.setParentCommentId(expectedParentComment.getId());
+        given(articleCommentRepository.findByArticle_Id(articleId)).willReturn(List.of(
+                expectedParentComment,
+                expectedChildComment
+        ));
 
         List<ArticleCommentDto> actual = sut.searchArticleComments(articleId);
 
+        assertThat(actual).hasSize(2);
         assertThat(actual)
-                .hasSize(1)
-                .first().hasFieldOrPropertyWithValue("content", expected.getContent());
+                .extracting("id", "articleId", "parentCommentId", "content")
+                .containsExactlyInAnyOrder(
+                        tuple(1L, 1L, null, "parent content"),
+                        tuple(2L, 1L, 1L, "child content")
+                );
         then(articleCommentRepository).should().findByArticle_Id(articleId);
     }
 
@@ -68,8 +78,27 @@ class ArticleCommentServiceTest {
         sut.saveArticleComment(dto);
 
         then(articleRepository).should().getReferenceById(dto.articleId());
+        then(articleCommentRepository).should(never()).getReferenceById(anyLong());
         then(articleCommentRepository).should().save(any(ArticleComment.class));
         then(userAccountRepository).should().findByUserId(dto.userAccountDto().userId());
+    }
+    @DisplayName("부모 댓글 ID 와 댓글 정보를 입력하면, 대댓글을 저장한다.")
+    @Test
+    void givenParentCommentIdAndCommentInfo_whenSaving_thenSaveChildComment() {
+
+        Long parentCommentId = 1L;
+        ArticleComment parent = createArticleComment(parentCommentId, "댓글");
+        ArticleCommentDto child = createArticleCommentDto(parentCommentId, "대댓글");
+        given(articleRepository.getReferenceById(child.articleId())).willReturn(createArticle());
+        given(userAccountRepository.findByUserId(child.userAccountDto().userId())).willReturn(Optional.of(createUserAccount()));
+        given(articleCommentRepository.getReferenceById(child.parentCommentId())).willReturn(parent);
+
+        sut.saveArticleComment(child);
+
+        assertThat(child.parentCommentId()).isNotNull();
+        then(articleRepository).should().getReferenceById(child.articleId());
+        then(userAccountRepository).should().findByUserId(child.userAccountDto().userId());
+        then(articleCommentRepository).should(never()).save(any(ArticleComment.class));
     }
 
     @DisplayName("댓글 저장을 시도했는데 맞는 게시글이 없으면, 경고 로그를 찍고 아무것도 안 한다.")
@@ -92,8 +121,8 @@ class ArticleCommentServiceTest {
 
         String oldContent = "content";
         String updatedContent = "댓글";
-        ArticleComment articleComment = createArticleComment(oldContent);
         ArticleCommentDto dto = createArticleCommentDto(updatedContent);
+        ArticleComment articleComment = createArticleComment(dto.id(), oldContent);
         given(articleCommentRepository.getReferenceById(dto.id())).willReturn(articleComment);
 
         sut.updateArticleComment(dto);
@@ -116,34 +145,40 @@ class ArticleCommentServiceTest {
         then(articleCommentRepository).should().getReferenceById(dto.id());
     }
 
+    @DisplayName("댓글 ID를 입력하면, 댓글을 삭제한다.")
+    @Test
+    void givenArticleCommentId_whenDeletingArticleComment_thenDeletesArticleComment() {
 
+        Long articleCommentId = 1L;
+        String userId = "song";
+        willDoNothing().given(articleCommentRepository).deleteByIdAndUserAccount_UserId(articleCommentId, userId);
+
+        sut.deleteArticleComment(articleCommentId, userId);
+
+        then(articleCommentRepository).should().deleteByIdAndUserAccount_UserId(articleCommentId, userId);
+    }
 
     private ArticleCommentDto createArticleCommentDto(String content) {
+        return createArticleCommentDto(null, content);
+    }
+
+    private ArticleCommentDto createArticleCommentDto(Long parentCommentId, String content) {
+        return createArticleCommentDto(1L, parentCommentId, content);
+    }
+
+
+    private ArticleCommentDto createArticleCommentDto(Long id, Long parentCommentId, String content) {
         return ArticleCommentDto.of(
-                1L,
+                id,
                 1L,
                 createUserAccountDto(),
+                parentCommentId,
                 content,
                 LocalDateTime.now(),
                 "song",
                 LocalDateTime.now(),
                 "song"
         );
-    }
-
-    @DisplayName("댓글 ID를 입력하면, 댓글을 삭제한다.")
-    @Test
-    void givenArticleCommentId_whenDeletingArticleComment_thenDeletesArticleComment() {
-        // Given
-        Long articleCommentId = 1L;
-        String userId = "song";
-        willDoNothing().given(articleCommentRepository).deleteByIdAndUserAccount_UserId(articleCommentId, userId);
-
-        // When
-        sut.deleteArticleComment(articleCommentId, userId);
-
-        // Then
-        then(articleCommentRepository).should().deleteByIdAndUserAccount_UserId(articleCommentId, userId);
     }
 
     private UserAccountDto createUserAccountDto() {
@@ -160,12 +195,17 @@ class ArticleCommentServiceTest {
         );
     }
 
-    private ArticleComment createArticleComment(String content) {
-        return ArticleComment.of(
+    private ArticleComment createArticleComment(Long id, String content) {
+
+        ArticleComment articleComment = ArticleComment.of(
                 createArticle(),
                 createUserAccount(),
                 content
         );
+
+        ReflectionTestUtils.setField(articleComment, "id", id);
+
+        return articleComment;
     }
 
     private UserAccount createUserAccount() {
@@ -184,6 +224,7 @@ class ArticleCommentServiceTest {
                 "title",
                 "content"
         );
+        ReflectionTestUtils.setField(article, "id", 1L);
         article.addHashtags(Set.of(createHashtag(article)));
 
         return article;

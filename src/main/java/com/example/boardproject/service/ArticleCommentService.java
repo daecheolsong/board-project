@@ -42,7 +42,15 @@ public class ArticleCommentService {
             Article article = articleRepository.getReferenceById(articleCommentDto.articleId());
             UserAccount userAccount = userAccountRepository.findByUserId(articleCommentDto.userAccountDto().userId())
                     .orElseThrow(EntityNotFoundException::new);
-            articleCommentRepository.save(articleCommentDto.toEntity(article, userAccount));
+
+            ArticleComment articleComment = articleCommentDto.toEntity(article, userAccount);
+
+            if (articleCommentDto.parentCommentId() != null) {
+                ArticleComment parentComment = articleCommentRepository.getReferenceById(articleCommentDto.parentCommentId());
+                parentComment.addChildComment(articleComment);
+            } else {
+                articleCommentRepository.save(articleComment);
+            }
         } catch (EntityNotFoundException e) {
             log.warn("댓글 저장 실패. 댓글의 게시글을 찾을 수 없습니다 - dto: {}", articleCommentDto);
         }
