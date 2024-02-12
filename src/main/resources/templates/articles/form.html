@@ -6,7 +6,6 @@
     <meta name="description" content="">
     <meta name="author" content="Uno Kim">
     <title>새 게시글 등록</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
 </head>
 
@@ -32,7 +31,8 @@
         <div class="row mb-3 justify-content-md-center">
             <label for="content" class="col-sm-2 col-lg-1 col-form-label text-sm-end">본문</label>
             <div class="col-sm-8 col-lg-9">
-                <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                <div id="editor"></div>
+                <input type="hidden" class="form-control" id="content" name="content">
             </div>
         </div>
         <div class="row mb-5 justify-content-md-center">
@@ -50,5 +50,31 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+<script th:inline="javascript">
+    let editor = document.querySelector('#editor');
+    editor.innerHTML = [[${article?.content ?: _}]];
+    ClassicEditor
+        .create(editor, {
+            mediaEmbed: {
+                previewsInData: true
+            }
+        })
+        .then( newEditor => {
+            editor = newEditor;
+            }
+        )
+        .catch( error => {
+            console.error( error );
+        } );
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector( '#submit-button' ).addEventListener( 'click', () => {
+            const editorData = editor.getData();
+            let contentInput = document.querySelector('#content');
+            contentInput.value = editorData;
+        });
+
+    })
+</script>
 </body>
 </html>
