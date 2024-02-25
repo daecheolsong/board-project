@@ -41,6 +41,7 @@ public class SecurityConfig {
                         auth -> auth
                                 .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
                                 .permitAll()
+                                .mvcMatchers("/api/**").permitAll()
                                 .mvcMatchers(
                                         HttpMethod.GET,
                                         "/",
@@ -57,6 +58,7 @@ public class SecurityConfig {
                         userInfoEndpointConfig.userService(oAuth2UserService(userAccountService));
                     });
                 })
+                .csrf(csrf -> csrf.ignoringAntMatchers("/api/**"))
                 .build();
     }
 
